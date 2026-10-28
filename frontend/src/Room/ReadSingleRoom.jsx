@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { authHeader, getToken } from "../auth";
 import { apiUrl } from "../constant";
 import {
   formatDate,
@@ -20,9 +21,11 @@ const ReadSingleRoom = ({ user }) => {
     let getRoom = async () => {
       setLoading(true);
       try {
+        // send token if logged in, so backend also sends owner contact
         let result = await axios({
           url: `${apiUrl}/room/${params.id}`,
           method: "get",
+          headers: getToken() ? authHeader() : {},
         });
         setRoom(result.data.result);
       } catch {
@@ -125,14 +128,24 @@ const ReadSingleRoom = ({ user }) => {
                 <p>
                   <strong>{room.owner.name}</strong>
                 </p>
-                <p>
-                  Phone:{" "}
-                  <a href={`tel:${room.owner.phone}`}>{room.owner.phone}</a>
-                </p>
-                <p>
-                  Email:{" "}
-                  <a href={`mailto:${room.owner.email}`}>{room.owner.email}</a>
-                </p>
+                {room.owner.phone ? (
+                  <>
+                    <p>
+                      Phone:{" "}
+                      <a href={`tel:${room.owner.phone}`}>{room.owner.phone}</a>
+                    </p>
+                    <p>
+                      Email:{" "}
+                      <a href={`mailto:${room.owner.email}`}>
+                        {room.owner.email}
+                      </a>
+                    </p>
+                  </>
+                ) : (
+                  <p className="muted">
+                    <Link to="/login">Login</Link> to see owner contact.
+                  </p>
+                )}
               </>
             ) : (
               <p className="muted">Owner details not available.</p>

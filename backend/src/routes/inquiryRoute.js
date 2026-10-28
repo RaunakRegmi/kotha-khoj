@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { isValidObjectId } from "mongoose";
+import checkId from "../middleware/checkId.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import isAuthorized from "../middleware/isAuthorized.js";
 import Inquiry from "../schema/inquirySchema.js";
@@ -6,13 +8,24 @@ import Room from "../schema/roomSchema.js";
 
 let inquiryRoute = Router();
 
+// check :id is a valid mongodb id
+inquiryRoute.param("id", checkId);
+
 let roomFields = "title rent location image owner";
+// user fields shown with inquiry (sender or room owner)
 let senderFields = "name email phone";
 
 // send inquiry => logged in user asks about someone else's room
 inquiryRoute.route("/").post(isAuthenticated, async (req, res, next) => {
   try {
     let { room, message, phone } = req.body;
+
+    if (!isValidObjectId(room)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid room",
+      });
+    }
 
     let foundRoom = await Room.findById(room);
     if (!foundRoom) {
@@ -70,9 +83,14 @@ inquiryRoute.route("/").post(isAuthenticated, async (req, res, next) => {
 // sent => inquiries I sent
 inquiryRoute.route("/sent").get(isAuthenticated, async (req, res, next) => {
   try {
+    // also get room owner, so sender can contact owner after accepted
     let result = await Inquiry.find({ sender: req.user._id })
       .sort({ createdAt: -1 })
-      .populate("room", roomFields);
+      .populate({
+        path: "room",
+        select: roomFields,
+        populate: { path: "owner", select: senderFields },
+      });
     res.status(200).json({
       success: true,
       message: "Sent inquiries read successfully.",
@@ -159,7 +177,7 @@ inquiryRoute
       let result = await Inquiry.findByIdAndUpdate(
         req.params.id,
         { status: req.body.status },
-        { new: true, runValidators: true },
+        { returnDocument: "after", runValidators: true },
       );
       res.status(200).json({
         success: true,

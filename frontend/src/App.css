@@ -366,6 +366,12 @@ textarea {
   color: #166534;
 }
 
+.notice-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+  margin-bottom: 16px;
+}
+
 /* ---------- my rooms and room form ---------- */
 .page-header {
   display: flex;
@@ -536,6 +542,29 @@ td .badge {
 
 .message-cell {
   max-width: 300px;
+}
+
+/* ---------- footer (stays at bottom on short pages) ---------- */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page main {
+  flex: 1;
+  width: 100%;
+}
+
+.footer {
+  background-color: var(--white);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  margin-top: 40px;
+}
+
+.footer p {
+  margin: 4px 0;
 }
 
 /* ---------- other ---------- */

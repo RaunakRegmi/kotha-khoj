@@ -10,6 +10,8 @@ const Login = ({ setUser }) => {
   let [password, setPassword] = useState("");
   let [loading, setLoading] = useState(false);
   let navigate = useNavigate();
+  // ?expired=true is added when session ends (see auth.js)
+  let expired = new URLSearchParams(window.location.search).get("expired");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +42,11 @@ const Login = ({ setUser }) => {
   return (
     <div className="form-card">
       <h2>Login</h2>
+      {expired ? (
+        <p className="notice notice-warning">
+          Your session has expired. Please login again.
+        </p>
+      ) : null}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Email</label>

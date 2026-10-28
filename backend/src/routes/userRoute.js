@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { secretKey } from "../constant.js";
+import checkId from "../middleware/checkId.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import isAuthorized from "../middleware/isAuthorized.js";
 import Inquiry from "../schema/inquirySchema.js";
@@ -9,6 +10,9 @@ import Room from "../schema/roomSchema.js";
 import User from "../schema/userSchema.js";
 
 let userRoute = Router();
+
+// check :id is a valid mongodb id
+userRoute.param("id", checkId);
 
 // register => anyone can make a normal user account
 userRoute.route("/register").post(async (req, res, next) => {
@@ -102,7 +106,7 @@ userRoute
       let result = await User.findByIdAndUpdate(
         req.user._id,
         { name: req.body.name, phone: req.body.phone },
-        { new: true, runValidators: true },
+        { returnDocument: "after", runValidators: true },
       );
 
       res.status(200).json({
@@ -129,7 +133,7 @@ userRoute
         req.user.password,
       );
       if (!isValidPassword) {
-        return res.status(401).json({
+        return res.status(400).json({
           success: false,
           message: "Old password is wrong",
         });

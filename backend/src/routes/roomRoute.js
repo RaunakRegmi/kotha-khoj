@@ -1,13 +1,35 @@
 import { Router } from "express";
+import checkId from "../middleware/checkId.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import isAuthorized from "../middleware/isAuthorized.js";
+import readUser from "../middleware/readUser.js";
 import Inquiry from "../schema/inquirySchema.js";
 import Room from "../schema/roomSchema.js";
 
 let roomRoute = Router();
 
+// check :id is a valid mongodb id
+roomRoute.param("id", checkId);
+
 // owner details shown with a room (no password, see userSchema)
+// visitors only see owner name, logged in users also see contact
 let ownerFields = "name email phone";
+let publicOwnerFields = "name";
+
+// only take room fields from body
+// so nobody can send owner, _id, createdAt or "$set" tricks
+let getRoomData = (body) => {
+  return {
+    title: body.title,
+    description: body.description,
+    rent: body.rent,
+    location: body.location,
+    address: body.address,
+    roomType: body.roomType,
+    image: body.image,
+    available: body.available,
+  };
+};
 
 // only the owner of the room or admin can update/delete it
 let canEdit = (room, user) => {
@@ -19,7 +41,10 @@ roomRoute
   // create room => owner is the logged in user
   .post(isAuthenticated, async (req, res, next) => {
     try {
-      let result = await Room.create({ ...req.body, owner: req.user._id });
+      let result = await Room.create({
+        ...getRoomData(req.body),
+        owner: req.user._id,
+      });
       res.status(201).json({
         success: true,
         message: "Room created successfully.",
@@ -60,7 +85,7 @@ roomRoute
 
       let result = await Room.find(filter)
         .sort(sortBy)
-        .populate("owner", ownerFields);
+        .populate("owner", publicOwnerFields);
       res.status(200).json({
         success: true,
         message: "Rooms read successfully.",
@@ -116,12 +141,12 @@ roomRoute
 
 roomRoute
   .route("/:id")
-  // read single room => public
-  .get(async (req, res, next) => {
+  // read single room => public, owner contact only for logged in user
+  .get(readUser, async (req, res, next) => {
     try {
       let result = await Room.findById(req.params.id).populate(
         "owner",
-        ownerFields,
+        req.user ? ownerFields : publicOwnerFields,
       );
       if (!result) {
         return res.status(404).json({
@@ -158,13 +183,15 @@ roomRoute
         });
       }
 
-      // owner cannot be changed
-      let { owner, ...data } = req.body;
-
-      let result = await Room.findByIdAndUpdate(req.params.id, data, {
-        new: true,
-        runValidators: true,
-      });
+      // fields not sent (undefined) are not changed
+      let result = await Room.findByIdAndUpdate(
+        req.params.id,
+        getRoomData(req.body),
+        {
+          returnDocument: "after",
+          runValidators: true,
+        },
+      );
       res.status(200).json({
         success: true,
         message: "Room updated successfully.",

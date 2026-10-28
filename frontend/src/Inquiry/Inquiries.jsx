@@ -151,6 +151,19 @@ const Inquiries = () => {
                 ) : null}
 
                 <p className="inquiry-message pre-line">{inquiry.message}</p>
+
+                {tab === "sent" &&
+                inquiry.status === "accepted" &&
+                inquiry.room?.owner ? (
+                  <p className="notice notice-success">
+                    The owner accepted your inquiry. Contact{" "}
+                    <strong>{inquiry.room.owner.name}</strong> at{" "}
+                    <a href={`tel:${inquiry.room.owner.phone}`}>
+                      {inquiry.room.owner.phone}
+                    </a>
+                    .
+                  </p>
+                ) : null}
                 <p className="muted small">Sent on {formatDate(inquiry.createdAt)}</p>
 
                 <div className="card-actions">

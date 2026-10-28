@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { authHeader, getToken, getUser, removeLogin, saveUser } from "./auth";
 import { apiUrl } from "./constant";
+import Footer from "./Footer";
 import KothaNavLink from "./KothaNavLink";
 import KothaRoute from "./KothaRoute";
 
@@ -34,11 +35,12 @@ const App = () => {
   }, []);
 
   return (
-    <div>
+    <div className="page">
       <KothaNavLink user={user} setUser={setUser} />
       <main className="container">
         <KothaRoute user={user} setUser={setUser} />
       </main>
+      <Footer />
     </div>
   );
 };
